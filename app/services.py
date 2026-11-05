@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -6,15 +7,19 @@ from .models import User, Familia, ItemDoacao, Atendimento
 class AuthService:
     @staticmethod
     def hash_password(password: str) -> str:
+        """Aplica hashing unidirecional robusto utilizando o algoritmo scrypt."""
         return generate_password_hash(password, method='scrypt')
 
     @staticmethod
     def verify_password(stored_hash: str, password: str) -> bool:
+        """Compara a senha fornecida com o hash armazenado de forma constante no tempo."""
         return check_password_hash(stored_hash, password)
 
     @staticmethod
     def authenticate(email: str, password: str):
-        user = User.query.filter_by(email=email.strip().lower()).first()
+        """Autentica usuário sanitizando o e-mail e prevenindo vazamentos de existência."""
+        email_sanitizado = re.sub(r'[\r\n\t]', '', email.strip().lower())
+        user = User.query.filter_by(email=email_sanitizado).first()
         if user and AuthService.verify_password(user.password_hash, password):
             return user
         return None
@@ -22,6 +27,7 @@ class AuthService:
 class AtendimentoService:
     @staticmethod
     def pode_receber_cesta(familia_id: int, data_referencia: date | None = None) -> tuple[bool, str, Atendimento | None]:
+        """Aplica a regra de negócio da trava de duplicidade mensal (RF02)."""
         if data_referencia is None:
             data_referencia = datetime.now(timezone.utc).date()
 
@@ -49,25 +55,36 @@ class AtendimentoService:
         return True, "LIBERADA P/ RETIRADA", ultimo_atendimento
 
     @staticmethod
-    def registrar_atendimento(familia_id: int, responsavel_entrega: str = "Regina de Fátima Alves", tipo_beneficio: str = "Cesta Básica Completa", observacoes: str = "") -> Atendimento:
-        pode, motivo, ultimo = AtendimentoService.pode_receber_cesta(familia_id)
+    def registrar_atendimento(
+        familia_id: int,
+        responsavel_entrega: str = "Regina de Fátima Alves",
+        tipo_beneficio: str = "Cesta Básica Completa",
+        observacoes: str = ""
+    ) -> Atendimento:
+        """Registra a entrega com controle estrito de transação e rollback em falhas."""
+        pode, motivo, _ = AtendimentoService.pode_receber_cesta(familia_id)
         if not pode:
             raise ValueError(motivo)
 
-        atendimento = Atendimento(
-            familia_id=familia_id,
-            data_atendimento=datetime.now(timezone.utc),
-            tipo_beneficio=tipo_beneficio,
-            responsavel_entrega=responsavel_entrega,
-            observacoes=observacoes
-        )
-        db.session.add(atendimento)
-        db.session.commit()
-        return atendimento
+        try:
+            atendimento = Atendimento(
+                familia_id=familia_id,
+                data_atendimento=datetime.now(timezone.utc),
+                tipo_beneficio=tipo_beneficio,
+                responsavel_entrega=responsavel_entrega,
+                observacoes=observacoes.strip()
+            )
+            db.session.add(atendimento)
+            db.session.commit()
+            return atendimento
+        except Exception:
+            db.session.rollback()
+            raise RuntimeError("Falha interna ao persistir o atendimento. Transação revertida com segurança.")
 
 class EstoqueService:
     @staticmethod
     def calcular_status_validade(data_validade: date, data_referencia: date | None = None) -> dict:
+        """Calcula o nível de urgência do lote de alimentos para o combate ao desperdício (ODS 2)."""
         if data_referencia is None:
             data_referencia = datetime.now(timezone.utc).date()
 
@@ -112,27 +129,41 @@ class EstoqueService:
 
     @staticmethod
     def cadastrar_item(nome: str, quantidade: int, unidade: str, data_validade: date, categoria: str = "Alimento") -> ItemDoacao:
-        item = ItemDoacao(
-            nome_alimento=nome.strip(),
-            quantidade=quantidade,
-            unidade_medida=unidade.strip(),
-            data_validade=data_validade,
-            categoria=categoria
-        )
-        db.session.add(item)
-        db.session.commit()
-        return item
+        if quantidade <= 0:
+            raise ValueError("A quantidade do item deve ser estritamente positiva.")
+
+        try:
+            item = ItemDoacao(
+                nome_alimento=nome.strip(),
+                quantidade=quantidade,
+                unidade_medida=unidade.strip(),
+                data_validade=data_validade,
+                categoria=categoria
+            )
+            db.session.add(item)
+            db.session.commit()
+            return item
+        except Exception:
+            db.session.rollback()
+            raise RuntimeError("Falha interna ao cadastrar doação. Transação revertida com segurança.")
 
 class FamiliaService:
     @staticmethod
+    def validar_formato_cpf(cpf: str) -> bool:
+        """Valida se o formato do CPF contém 11 dígitos numéricos válidos."""
+        apenas_digitos = re.sub(r'\D', '', cpf)
+        return len(apenas_digitos) == 11
+
+    @staticmethod
     def buscar_por_termo(termo: str) -> list[Familia]:
-        termo = termo.strip()
-        if not termo:
+        """Busca segura utilizando consultas parametrizadas contra injeção de SQL."""
+        termo_sanitizado = termo.strip()
+        if not termo_sanitizado:
             return []
-        termo_limpo_cpf = termo.replace('.', '').replace('-', '')
+        termo_limpo_cpf = re.sub(r'\D', '', termo_sanitizado)
         return Familia.query.filter(
-            (Familia.nome_responsavel.ilike(f"%{termo}%")) |
-            (Familia.cpf.like(f"%{termo}%")) |
+            (Familia.nome_responsavel.ilike(f"%{termo_sanitizado}%")) |
+            (Familia.cpf.like(f"%{termo_sanitizado}%")) |
             (Familia.cpf.like(f"%{termo_limpo_cpf}%"))
         ).all()
 
@@ -220,3 +251,4 @@ def seed_initial_data():
         db.session.add_all([item1, item2, item3, item4])
 
     db.session.commit()
+
