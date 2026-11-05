@@ -1,0 +1,46 @@
+/* Estilos de Acessibilidade e Identidade Visual — WCAG AA */
+:root {
+    --primary-color: #0d6efd;
+    --primary-hover: #0b5ed7;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --font-base: 1rem;
+}
+
+body {
+    font-size: var(--font-base);
+    color: #212529;
+    background-color: #f8f9fa;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Área de toque mínima recomendada (WCAG 2.5.5 / 2.5.8) de 44x44px */
+.btn, .form-control, .form-select, .nav-link {
+    min-height: 44px;
+}
+
+/* Foco visível com alto contraste para navegação por teclado */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 3px solid #0d6efd !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+/* Rótulos e badges acessíveis com redundância visual */
+.badge {
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+}
+
+/* Transições suaves */
+.btn {
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}

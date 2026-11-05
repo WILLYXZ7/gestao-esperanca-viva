@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Estoque & Alertas — Gestão Esperança Viva{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+
+        <!-- Cabeçalho e Botão de Ação -->
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-2">
+            <div>
+                <h1 class="h3 fw-bold mb-0 text-primary">
+                    <i class="bi bi-box-seam me-2" aria-hidden="true"></i>Estoque de Donativos & Alertas
+                </h1>
+                <p class="text-muted small mb-0">Monitoramento preventivo de validades para combate ao desperdício alimentar (ODS 2)</p>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNovaDoacao" style="min-height: 44px;">
+                    <i class="bi bi-plus-circle-fill me-1"></i> REGISTRAR NOVA DOAÇÃO
+                </button>
+            </div>
+        </div>
+
+        <!-- Cards com Métricas em Destaque -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 bg-white p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary-subtle text-primary p-3 rounded-circle me-3">
+                            <i class="bi bi-boxes fs-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Volume em Estoque</span>
+                            <h2 class="h3 fw-bold mb-0">{{ total_itens }} un/kg</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 bg-white p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning-subtle text-warning-emphasis p-3 rounded-circle me-3">
+                            <i class="bi bi-hourglass-split fs-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Alertas de Validade</span>
+                            <h2 class="h3 fw-bold mb-0 text-warning-emphasis">{{ criticos_count }} itens prioritários</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-12 col-md-4">
+                <div class="card border-0 shadow-sm rounded-3 bg-white p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success-subtle text-success p-3 rounded-circle me-3">
+                            <i class="bi bi-shield-check fs-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Garantia ODS 2</span>
+                            <h2 class="h3 fw-bold mb-0 text-success">Zero Desperdício</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela Responsiva de Alimentos e Status -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h2 class="h5 fw-bold mb-0 text-dark">
+                    <i class="bi bi-list-check me-2 text-primary"></i>Lotes de Alimentos Cadastrados
+                </h2>
+                <span class="badge bg-light text-dark border"><i class="bi bi-funnel me-1"></i> Ordenado por vencimento</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" aria-label="Tabela de estoque e validade">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4">Alimento / Item</th>
+                            <th scope="col">Categoria</th>
+                            <th scope="col">Quantidade</th>
+                            <th scope="col">Data de Validade</th>
+                            <th scope="col" class="pe-4">Status & Prioridade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in itens_status %}
+                        <tr class="{{ 'table-warning' if row.status.codigo == 'critico' else ('table-danger' if row.status.codigo == 'vencido' else '') }}">
+                            <td class="ps-4 fw-bold">
+                                {{ row.item.nome_alimento }}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ row.item.categoria }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ row.item.quantidade }}</strong> {{ row.item.unidade_medida }}
+                            </td>
+                            <td>
+                                {{ row.item.data_validade.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td class="pe-4">
+                                <span class="badge {{ row.status.css_badge }} py-2 px-3 fw-semibold">
+                                    <i class="bi {{ row.status.icone }} me-1" aria-hidden="true"></i>
+                                    {{ row.status.label }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal para Cadastro de Doação -->
+<div class="modal fade" id="modalNovaDoacao" tabindex="-1" aria-labelledby="modalNovaDoacaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold" id="modalNovaDoacaoLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Registrar Nova Doação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form action="{{ url_for('main.cadastrar_doacao') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="nome_alimento" class="form-label fw-semibold">Nome do Alimento / Produto</label>
+                        <input type="text" class="form-control" id="nome_alimento" name="nome_alimento" placeholder="Ex: Macarrão Espaguete" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label for="quantidade" class="form-label fw-semibold">Quantidade</label>
+                            <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" value="10" required>
+                        </div>
+                        <div class="col-5">
+                            <label for="unidade_medida" class="form-label fw-semibold">Unidade</label>
+                            <select class="form-select" id="unidade_medida" name="unidade_medida">
+                                <option value="kg">kg</option>
+                                <option value="unidades" selected>unidades</option>
+                                <option value="caixas">caixas</option>
+                                <option value="litros">litros</option>
+                                <option value="pacotes">pacotes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label fw-semibold">Categoria</label>
+                        <select class="form-select" id="categoria" name="categoria">
+                            <option value="Não perecíveis" selected>Não perecíveis (Grãos, Massas)</option>
+                            <option value="Laticínios">Laticínios</option>
+                            <option value="Hortifrúti">Hortifrúti</option>
+                            <option value="Higiene e Limpeza">Higiene e Limpeza</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="data_validade" class="form-label fw-semibold">Data de Validade</label>
+                        <input type="date" class="form-control" id="data_validade" name="data_validade" required>
+                        <div class="form-text">Itens com vencimento inferior a 7 dias gerarão alerta crítico automático.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4" style="min-height: 44px;">
+                        <i class="bi bi-save me-1"></i> SALVAR DOAÇÃO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
