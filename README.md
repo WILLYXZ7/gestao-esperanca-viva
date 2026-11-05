@@ -1,6 +1,6 @@
 # Sistema de Gestão Comunitária de Doações e Atendimentos
 
-[![CI - Integracao Continua e Testes Automatizados](https://github.com/SEU-USUARIO/gestao-esperanca-viva/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU-USUARIO/gestao-esperanca-viva/actions)
+[![CI - Integracao Continua e Testes Automatizados](https://github.com/WILLYXZ7/gestao-esperanca-viva/actions/workflows/ci.yml/badge.svg)](https://github.com/WILLYXZ7/gestao-esperanca-viva/actions)
 ![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)
 ![Framework](https://img.shields.io/badge/framework-Flask%203.0-lightgrey.svg)
 ![ODS 2](https://img.shields.io/badge/ODS-2%20Fome%20Zero-green.svg)
@@ -83,7 +83,7 @@ gestao-esperanca-viva/
 
 1. **Clonar o repositório:**
    ```bash
-   git clone https://github.com/SEU-USUARIO/gestao-esperanca-viva.git
+   git clone https://github.com/WILLYXZ7/gestao-esperanca-viva.git
    cd gestao-esperanca-viva
    ```
 
@@ -139,3 +139,4 @@ O repositório possui uma esteira automatizada configurada via **GitHub Actions*
 
 Desenvolvido para fins acadêmicos e comunitários em parceria com a **Associação Comunitária Esperança Viva**.  
 Licença MIT.
+
