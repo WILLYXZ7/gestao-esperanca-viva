@@ -1,0 +1,38 @@
+name: CI - Integracao Continua e Testes Automatizados
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Build & Testes Automatizados
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Ambiente Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar Dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Analise Estatica de Codigo (Lint com Flake8)
+        run: |
+          # Parar o build se houver erros de sintaxe ou variaveis indefinidas
+          flake8 app tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Avisos adicionais sem quebrar o pipeline
+          flake8 app tests --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Executar Testes Unitarios e de Integracao (pytest)
+        run: |
+          pytest -v --tb=short
